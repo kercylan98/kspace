@@ -8,7 +8,10 @@ import (
 	"github.com/kercylan98/kspace/src/cmd/kspace-dal/src/pkg/models"
 	"github.com/kercylan98/kspace/src/cmd/kspace-dal/src/rpc"
 	"github.com/kercylan98/kspace/src/cmd/kspace-uas/src/pkg/oauth2"
+	"github.com/kercylan98/kspace/src/pkg/orm"
 	"github.com/kercylan98/kspace/src/pkg/web"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"net/http"
 	"time"
 )
@@ -20,7 +23,7 @@ type OAuth2 struct {
 	rpc.DalUserClient
 }
 
-func (slf OAuth2) Initialization(router gin.IRouter, twist web.TwistFunc) {
+func (slf *OAuth2) Initialization(router gin.IRouter, twist web.TwistFunc) {
 	oauthGroup := router.Group("/oauth")
 	oauthGroup.
 		GET("/authorize", twist.Exec(slf.Authorize)).
@@ -30,19 +33,26 @@ func (slf OAuth2) Initialization(router gin.IRouter, twist web.TwistFunc) {
 	oauthGroup.Group("/clients").
 		POST("", twist.Exec(slf.CreateClient))
 
-	//accounts := v1.Group("/accounts")
-	//{
-	//	accounts.GET(":id", c.ShowAccount)
-	//	accounts.GET("", c.ListAccounts)
-	//	accounts.POST("", c.AddAccount)
-	//	accounts.DELETE(":id", c.DeleteAccount)
-	//	accounts.PATCH(":id", c.UpdateAccount)
-	//	accounts.POST(":id/images", c.UploadAccountImage)
-	//}
 	slf.SetUserAuthorizationHandler(slf.UserAuthorization)
 	slf.SetPasswordAuthorizationHandler(slf.PasswordAuthorization)
+
+	var (
+		err  error
+		conn *grpc.ClientConn
+	)
+
+	if conn, err = grpc.Dial("127.0.0.1:9500", grpc.WithTransportCredentials(insecure.NewCredentials())); err != nil {
+		panic(err)
+	}
+
+	slf.DalOAuth2Client = rpc.NewDalOAuth2Client(conn)
+	slf.DalUserClient = rpc.NewDalUserClient(conn)
+	slf.Server, err = oauth2.New[oauth2.Redis](
+		oauth2.Redis{Redis: (&(orm.Redis{})).InitUse("127.0.0.1:6379", "root", 15)},
+		slf)
 }
 
+// Logout 退出登录，并且可以指定重定向地址
 func (slf OAuth2) Logout(ctx web.Context) (response web.Response) {
 	token, err := slf.Server.ValidationBearerToken(ctx.Request)
 	if err != nil {
@@ -60,6 +70,7 @@ func (slf OAuth2) Logout(ctx web.Context) (response web.Response) {
 	return response
 }
 
+// ValidationBearerToken 对 Token 的有效性进行校验
 func (slf OAuth2) ValidationBearerToken(ctx web.Context) (response web.Response) {
 	token, err := slf.Server.ValidationBearerToken(ctx.Request)
 	if err != nil {
@@ -73,6 +84,7 @@ func (slf OAuth2) ValidationBearerToken(ctx web.Context) (response web.Response)
 	})
 }
 
+// PasswordAuthorization 密码授权函数
 func (slf OAuth2) PasswordAuthorization(ctx context.Context, username, password string) (userID string, err error) {
 	reply, err := slf.DalUserClient.VerifyPassword(ctx, &rpc.User{
 		Account:  username,
@@ -86,6 +98,7 @@ func (slf OAuth2) PasswordAuthorization(ctx context.Context, username, password 
 	return fmt.Sprint(reply.Id), nil
 }
 
+// UserAuthorization 客户端授权函数会通过请求中的客户端ID（client_id）查找到用户ID并返回
 func (slf OAuth2) UserAuthorization(w http.ResponseWriter, r *http.Request) (userID string, err error) {
 	if client, err := slf.Server.Manager.GetClient(r.Context(), r.FormValue("client_id")); err != nil {
 		return "", err
@@ -120,6 +133,7 @@ func (slf OAuth2) CreateClient(ctx web.Context) (response web.Response) {
 	return response.Pass(oa2c)
 }
 
+// Authorize 授权处理函数
 func (slf OAuth2) Authorize(ctx web.Context) (response web.Response) {
 	if err := slf.HandleAuthorizeRequest(&web.ResponseWriter{
 		ResponseWriter: ctx.Writer,
@@ -131,6 +145,7 @@ func (slf OAuth2) Authorize(ctx web.Context) (response web.Response) {
 	return response
 }
 
+// Token 处理函数
 func (slf OAuth2) Token(ctx web.Context) (response web.Response) {
 	if err := slf.HandleTokenRequest(&web.ResponseWriter{
 		ResponseWriter: ctx.Writer,
@@ -141,6 +156,7 @@ func (slf OAuth2) Token(ctx web.Context) (response web.Response) {
 	return response
 }
 
+// GetByID 实现了 OAuth2 的客户端存储接口
 func (slf OAuth2) GetByID(ctx context.Context, id string) (oauth.ClientInfo, error) {
 	client, err := slf.DalOAuth2Client.GetClientWithClientID(ctx, &rpc.AuthClient{
 		ClientID: id,
