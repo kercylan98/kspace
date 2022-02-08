@@ -92,9 +92,15 @@ func (slf *Server) RegisterVersionService(name string, version string, services 
 			slf.inUseRouter[routerName] = router
 		}
 	}
-	for _, service := range services {
-		service.Initialization(router, slf.twistHandle)
+
+	for i := 0; i < len(services); i++ {
+		service := services[i]
+		if err := service.Initialization(); err != nil {
+			panic(err)
+		}
+		service.BindRoute(router, slf.twistHandle)
 	}
+	fmt.Println(services)
 	return *slf
 }
 
@@ -112,7 +118,7 @@ func (slf *Server) RegisterService(name string, services ...Service) Server {
 		slf.inUseRouter[routerName] = router
 	}
 	for _, service := range services {
-		service.Initialization(router, slf.twistHandle)
+		service.BindRoute(router, slf.twistHandle)
 	}
 	return *slf
 }
@@ -120,7 +126,7 @@ func (slf *Server) RegisterService(name string, services ...Service) Server {
 // RegisterRootService 将服务(services)注册到根("/")路由器中
 func (slf *Server) RegisterRootService(services ...Service) Server {
 	for _, service := range services {
-		service.Initialization(slf.engine, slf.twistHandle)
+		service.BindRoute(slf.engine, slf.twistHandle)
 	}
 	return *slf
 }

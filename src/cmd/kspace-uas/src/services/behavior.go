@@ -15,20 +15,23 @@ type Behavior struct {
 	rpc.DalUserClient
 }
 
-func (slf *Behavior) Initialization(router gin.IRouter, twist web.TwistFunc) {
-	router.Group("/behavior").
-		POST("/signup", twist.Exec(slf.Signup))
-
+func (slf *Behavior) Initialization() error {
 	var (
 		err  error
 		conn *grpc.ClientConn
 	)
 
 	if conn, err = grpc.Dial("127.0.0.1:9500", grpc.WithTransportCredentials(insecure.NewCredentials())); err != nil {
-		panic(err)
+		return err
 	}
 
 	slf.DalUserClient = rpc.NewDalUserClient(conn)
+	return nil
+}
+
+func (slf Behavior) BindRoute(router gin.IRouter, twist web.TwistFunc) {
+	router.Group("/behavior").
+		POST("/signup", twist.Exec(slf.Signup))
 }
 
 // Signup 用户注册

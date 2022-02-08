@@ -23,7 +23,31 @@ type OAuth2 struct {
 	rpc.DalUserClient
 }
 
-func (slf *OAuth2) Initialization(router gin.IRouter, twist web.TwistFunc) {
+func (slf *OAuth2) Initialization() error {
+	var (
+		err  error
+		conn *grpc.ClientConn
+	)
+
+	if conn, err = grpc.Dial("127.0.0.1:9500", grpc.WithTransportCredentials(insecure.NewCredentials())); err != nil {
+		return err
+	}
+
+	slf.DalOAuth2Client = rpc.NewDalOAuth2Client(conn)
+	slf.DalUserClient = rpc.NewDalUserClient(conn)
+	slf.Server, err = oauth2.New[oauth2.Redis](
+		oauth2.Redis{Redis: (&(orm.Redis{})).InitUse("127.0.0.1:6379", "root", 15)},
+		slf)
+	if err != nil {
+		return err
+	}
+
+	slf.SetUserAuthorizationHandler(slf.UserAuthorization)
+	slf.SetPasswordAuthorizationHandler(slf.PasswordAuthorization)
+	return nil
+}
+
+func (slf OAuth2) BindRoute(router gin.IRouter, twist web.TwistFunc) {
 	oauthGroup := router.Group("/oauth")
 	oauthGroup.
 		GET("/authorize", twist.Exec(slf.Authorize)).
@@ -32,24 +56,6 @@ func (slf *OAuth2) Initialization(router gin.IRouter, twist web.TwistFunc) {
 		GET("/logout", twist.Exec(slf.Logout))
 	oauthGroup.Group("/clients").
 		POST("", twist.Exec(slf.CreateClient))
-
-	slf.SetUserAuthorizationHandler(slf.UserAuthorization)
-	slf.SetPasswordAuthorizationHandler(slf.PasswordAuthorization)
-
-	var (
-		err  error
-		conn *grpc.ClientConn
-	)
-
-	if conn, err = grpc.Dial("127.0.0.1:9500", grpc.WithTransportCredentials(insecure.NewCredentials())); err != nil {
-		panic(err)
-	}
-
-	slf.DalOAuth2Client = rpc.NewDalOAuth2Client(conn)
-	slf.DalUserClient = rpc.NewDalUserClient(conn)
-	slf.Server, err = oauth2.New[oauth2.Redis](
-		oauth2.Redis{Redis: (&(orm.Redis{})).InitUse("127.0.0.1:6379", "root", 15)},
-		slf)
 }
 
 // Logout 退出登录，并且可以指定重定向地址
