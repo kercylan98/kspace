@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+option go_package = "github.com/kercylan98/kspace/src/cmd/kspace-dal/src/rpc";
+
+package rpc;
+
+service DalUser {
+  // 创建一个用户
+  rpc Create(User) returns (CreateReply) {}
+  // 创建多个用户
+  rpc CreateMultiple(MultipleUser) returns (CreateMultipleReply) {}
+  // 获取一个用户
+  rpc Get(User) returns (User) {}
+  // 验证密码是否正确
+  rpc VerifyPassword(User) returns (User) {}
+}
+
+message User {
+  uint32 id = 1;
+  string account = 2;
+  string password = 3;
+  string token = 4;
+}
+
+message CreateReply {
+  User user = 3;
+}
+
+message MultipleUser {
+  repeated User users = 1;
+}
+
+message CreateMultipleReply {
+  int32 size = 3;
+}

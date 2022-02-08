@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+option go_package = "github.com/kercylan98/kspace/src/cmd/kspace-dal/src/rpc";
+
+package rpc;
+
+service DalOAuth2 {
+  rpc CreateClient(AuthClient) returns (AuthClient) {}
+  rpc GetClientWithClientID(AuthClient) returns (AuthClient) {}
+}
+
+message AuthClient {
+  uint32 id = 1;
+  uint32 UserID = 2;
+  string ClientID = 3;
+  string ClientSecret = 4;
+  string Domain = 5;
+}
+

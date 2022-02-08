@@ -1,0 +1,56 @@
+version: "3"
+services:
+  mysql:
+    image: mysql/mysql-server:latest
+    container_name: kspace-mysql
+    restart: always
+    environment:
+      TZ: Asia/Shanghai
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ROOT_HOST: "%"
+      MYSQL_DATABASE: kspace
+      MYSQL_USER: kspace
+      MYSQL_PASSWORD: kspace
+    command:
+      --max_connections=1000
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --default-authentication-plugin=mysql_native_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./mysql/data:/var/lib/mysql
+      - ./mysql/conf:/etc/mysql/conf.d
+      - ./mysql/logs:/logs
+
+  redis:
+    image: redis:latest
+    container_name: kspace-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf
+      - ./redis/data:/data
+    command:
+      /bin/bash -c "redis-server /usr/local/etc/redis/redis.conf"
+
+  # MinIO 对象存储
+  minio:
+    image: docker.io/bitnami/minio:latest
+    container_name: kspace-minio
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - './minio/data:/data'
+
+  zookeeper:
+    image: zookeeper:latest
+    container_name: kspace-zookeeper
+    environment:
+      - ZOO_MY_ID=1
+    volumes:
+      - ./zookeeper/config:/conf
+    ports:
+      - "2181:2181"
