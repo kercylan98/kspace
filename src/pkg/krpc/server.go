@@ -14,6 +14,7 @@ import (
 type ServerDemandHandlerFunc func(rpcServer grpc.ServiceRegistrar,
 	mysql orm.MySQL,
 	redis orm.Redis,
+	zookeeper orm.Zookeeper,
 	rsa *cryptography.RSA,
 )
 
@@ -40,7 +41,9 @@ func RunServer(port int, register ...ServerDemandHandlerFunc) error {
 	for _, f := range register {
 		mysql := orm.MySQL{}
 		redis := orm.Redis{}
-		if f(server, mysql, redis, rsa); mysql.InitError != nil {
+		zookeeper := orm.Zookeeper{}
+		f(server, mysql, redis, zookeeper, rsa)
+		if mysql.InitError != nil || zookeeper.InitError != nil {
 			return err
 		}
 	}

@@ -13,7 +13,7 @@ import (
 )
 
 func UserServer() krpc.ServerDemandHandlerFunc {
-	return func(rpcServer grpc.ServiceRegistrar, mysql orm.MySQL, redis orm.Redis, rsa *cryptography.RSA) {
+	return func(rpcServer grpc.ServiceRegistrar, mysql orm.MySQL, redis orm.Redis, zookeeper orm.Zookeeper, rsa *cryptography.RSA) {
 		rpc.RegisterDalUserServer(rpcServer, User{
 			MySQL: mysql.InitDefault("root:root@tcp(127.0.0.1:3306)/kspace?charset=utf8mb4&parseTime=True&loc=Local",
 				&models.User{}, &models.OAuth2Client{},
