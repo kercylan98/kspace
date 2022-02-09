@@ -11,7 +11,7 @@ import (
 )
 
 func OAuth2Server() krpc.ServerDemandHandlerFunc {
-	return func(rpcServer grpc.ServiceRegistrar, mysql orm.MySQL, redis orm.Redis, zookeeper orm.Zookeeper, rsa *cryptography.RSA) {
+	return func(rpcServer grpc.ServiceRegistrar, mysql orm.MySQL, redis orm.Redis, rsa *cryptography.RSA) {
 		rpc2.RegisterDalOAuth2Server(rpcServer, OAuth2{
 			MySQL: mysql.InitDefault("root:root@tcp(127.0.0.1:3306)/kspace?charset=utf8mb4&parseTime=True&loc=Local"),
 			Redis: redis.InitUse("127.0.0.1", "root", 15),

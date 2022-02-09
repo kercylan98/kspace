@@ -6,27 +6,19 @@ import (
 	"github.com/kercylan98/kspace/src/cmd/kspace-dal/src/pkg/models"
 	"github.com/kercylan98/kspace/src/cmd/kspace-dal/src/rpc"
 	"github.com/kercylan98/kspace/src/pkg/web"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
 // Behavior 用户行为服务
 type Behavior struct {
-	rpc.DalUserClient
+	RpcUserClient rpc.DalUserClient
 }
 
 func (slf *Behavior) Initialization() error {
-	var (
-		err  error
-		conn *grpc.ClientConn
-	)
-
-	if conn, err = grpc.Dial("127.0.0.1:9500", grpc.WithTransportCredentials(insecure.NewCredentials())); err != nil {
-		return err
-	}
-
-	slf.DalUserClient = rpc.NewDalUserClient(conn)
 	return nil
+}
+
+func (slf *Behavior) Runtime(runtime web.Runtime) {
+	slf.RpcUserClient = rpc.NewDalUserClient(runtime.NodeService.Conn("KSpace-DAL"))
 }
 
 func (slf Behavior) BindRoute(router gin.IRouter, twist web.TwistFunc) {
@@ -44,7 +36,7 @@ func (slf Behavior) Signup(ctx web.Context) (response web.Response) {
 			Throw()
 	}
 
-	reply, err := slf.Create(ctx.Request.Context(), &rpc.User{
+	reply, err := slf.RpcUserClient.Create(ctx.Request.Context(), &rpc.User{
 		Account:  user.Account,
 		Password: user.Password,
 	})

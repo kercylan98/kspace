@@ -1,14 +1,19 @@
 package main
 
 import (
-	server2 "github.com/kercylan98/kspace/src/cmd/kspace-dal/src/server"
+	server "github.com/kercylan98/kspace/src/cmd/kspace-dal/src/server"
+	"github.com/kercylan98/kspace/src/pkg/distributed"
 	"github.com/kercylan98/kspace/src/pkg/krpc"
 )
 
 func main() {
-	var err = krpc.RunServer(9500,
-		server2.UserServer(),
-		server2.OAuth2Server())
+	var err = krpc.RunDistributed(distributed.Node{
+		Name:             "KSpace-DAL",
+		IsAutoGetAddress: true,
+		IsRandomUsePort:  true,
+	}, []string{"127.0.0.1:2181"},
+		server.UserServer(),
+		server.OAuth2Server())
 	if err != nil {
 		panic(err)
 	}

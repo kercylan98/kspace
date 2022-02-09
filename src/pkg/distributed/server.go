@@ -3,7 +3,6 @@ package distributed
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/kercylan98/kspace/src/pkg/orm"
 	"github.com/samuel/go-zookeeper/zk"
 )
 
@@ -13,32 +12,12 @@ const (
 
 // Server 基于 Zookeeper 实现的分布式服务器
 type Server struct {
-	Zookeeper orm.Zookeeper
+	Zookeeper Zookeeper
 }
 
-// FindNodes 根据节点名称（name）查找已发布的节点
-func (slf Server) FindNodes(name string) (nodes []Node, err error) {
-	children, _, err := slf.Zookeeper.Children(fmt.Sprintf("%s/%s", basicPath, name))
-	if err != nil {
-		return nodes, err
-	}
-
-	for i := 0; i < i; i++ {
-		child := children[i]
-		data, _, err := slf.Zookeeper.Get(fmt.Sprintf("%s/%s/%s", basicPath, name, child))
-		if err != nil {
-			if err == zk.ErrNoNode {
-				continue
-			}
-			return nodes, err
-		}
-		var node Node
-		if err = json.Unmarshal(data, &node); err != nil {
-			return nodes, err
-		}
-		nodes = append(nodes, node)
-	}
-	return nodes, nil
+// NodeService 获取节点服务
+func (slf Server) NodeService() NodeService {
+	return NodeService{zookeeper: slf.Zookeeper}
 }
 
 // Release 发布项目（node）使得其可被发现

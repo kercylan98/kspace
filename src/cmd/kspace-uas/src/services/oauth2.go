@@ -8,35 +8,22 @@ import (
 	"github.com/kercylan98/kspace/src/cmd/kspace-dal/src/pkg/models"
 	"github.com/kercylan98/kspace/src/cmd/kspace-dal/src/rpc"
 	"github.com/kercylan98/kspace/src/cmd/kspace-uas/src/pkg/oauth2"
-	"github.com/kercylan98/kspace/src/pkg/distributed"
 	"github.com/kercylan98/kspace/src/pkg/orm"
 	"github.com/kercylan98/kspace/src/pkg/web"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 	"net/http"
 	"time"
 )
 
 // OAuth2 参考：https://blog.csdn.net/qq_38384460/article/details/118221000
 type OAuth2 struct {
-	DistributedServer distributed.Server
-	OAuthServer       oauth2.Server[oauth2.Redis]
-	RPCOAuthClient    rpc.DalOAuth2Client
-	RPCUserClient     rpc.DalUserClient
+	OAuthServer    oauth2.Server[oauth2.Redis]
+	RPCOAuthClient rpc.DalOAuth2Client
+	RPCUserClient  rpc.DalUserClient
 }
 
 func (slf *OAuth2) Initialization() error {
-	var (
-		err  error
-		conn *grpc.ClientConn
-	)
+	var err error
 
-	if conn, err = grpc.Dial("127.0.0.1:9500", grpc.WithTransportCredentials(insecure.NewCredentials())); err != nil {
-		return err
-	}
-
-	slf.RPCOAuthClient = rpc.NewDalOAuth2Client(conn)
-	slf.RPCUserClient = rpc.NewDalUserClient(conn)
 	slf.OAuthServer, err = oauth2.New[oauth2.Redis](
 		oauth2.Redis{Redis: (&(orm.Redis{})).InitUse("127.0.0.1:6379", "root", 15)},
 		slf)
@@ -47,12 +34,12 @@ func (slf *OAuth2) Initialization() error {
 	slf.OAuthServer.SetUserAuthorizationHandler(slf.UserAuthorization)
 	slf.OAuthServer.SetPasswordAuthorizationHandler(slf.PasswordAuthorization)
 
-	slf.DistributedServer = distributed.Server{Zookeeper: orm.Zookeeper{
-		Conn:      nil,
-		Event:     nil,
-		InitError: nil,
-	}}
 	return nil
+}
+
+func (slf *OAuth2) Runtime(runtime web.Runtime) {
+	slf.RPCOAuthClient = rpc.NewDalOAuth2Client(runtime.NodeService.Conn("KSpace-DAL"))
+	slf.RPCUserClient = rpc.NewDalUserClient(runtime.NodeService.Conn("KSpace-DAL"))
 }
 
 func (slf OAuth2) BindRoute(router gin.IRouter, twist web.TwistFunc) {
@@ -105,7 +92,6 @@ func (slf OAuth2) PasswordAuthorization(ctx context.Context, username, password 
 		Password: password,
 	})
 	if err != nil {
-		fmt.Println(err)
 		return "", err
 	}
 

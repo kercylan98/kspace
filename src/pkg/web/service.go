@@ -7,8 +7,11 @@ import (
 // Service 提供 Web 服务的接口定义
 type Service interface {
 
-	// Initialization 初始化该服务所需的内容（将在 BindRoute 之前进行）
+	// Initialization 初始化该服务所需的内容（将在 Runtime 及 BindRoute 之前进行）
 	Initialization() error
+
+	// Runtime 服务开始运行时候执行（在 BindRoute 之前）
+	Runtime(runtime Runtime)
 
 	// BindRoute 定义该服务需要绑定的路由
 	BindRoute(router gin.IRouter, twist TwistFunc)
