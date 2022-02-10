@@ -1,0 +1,13 @@
+syntax = "proto3";
+
+option go_package = "github.com/kercylan98/kspace/src/cmd/kspace-dal/src/pkg/rpc/dal/mixin";
+
+package mixin;
+
+import "google/protobuf/timestamp.proto";
+
+message Time {
+  google.protobuf.Timestamp created_at = 1;
+  google.protobuf.Timestamp updated_at = 2;
+  google.protobuf.Timestamp deleted_at = 3;
+}

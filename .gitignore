@@ -16,6 +16,13 @@ middleware/mysql/data/
 middleware/mysql/logs/
 middleware/redis/data/
 middleware/zookeeper/
+middleware/mongodb/db/
+middleware/mongodb/log/
+middleware/etcd/data/
+middleware/nginx/logs/
+
+middleware/apisix/apisix-docker
+middleware/apisix/logs
 
 ./build/*
 go.sum

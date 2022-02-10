@@ -2,7 +2,6 @@ package models
 
 import (
 	"fmt"
-	"github.com/kercylan98/kspace/src/pkg/model"
 )
 
 // OAuth2Client 基于 OAuth2 的客户端模型

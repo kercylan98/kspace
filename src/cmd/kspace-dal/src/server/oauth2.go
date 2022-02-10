@@ -5,12 +5,12 @@ import (
 	"github.com/kercylan98/kspace/src/cmd/kspace-dal/src/pkg/models"
 	rpc2 "github.com/kercylan98/kspace/src/cmd/kspace-dal/src/rpc"
 	"github.com/kercylan98/kspace/src/pkg/cryptography"
-	"github.com/kercylan98/kspace/src/pkg/krpc"
 	"github.com/kercylan98/kspace/src/pkg/orm"
+	"github.com/kercylan98/kspace/src/pkg/rpc"
 	"google.golang.org/grpc"
 )
 
-func OAuth2Server() krpc.ServerDemandHandlerFunc {
+func OAuth2Server() rpc.ServerDemandHandlerFunc {
 	return func(rpcServer grpc.ServiceRegistrar, mysql orm.MySQL, redis orm.Redis, rsa *cryptography.RSA) {
 		rpc2.RegisterDalOAuth2Server(rpcServer, OAuth2{
 			MySQL: mysql.InitDefault("root:root@tcp(127.0.0.1:3306)/kspace?charset=utf8mb4&parseTime=True&loc=Local"),

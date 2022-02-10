@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	KeyBits = 2048
+	KeyBits = 256
 )
 
 func main() {

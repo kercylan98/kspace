@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+option go_package = "github.com/kercylan98/kspace/src/cmd/kspace-dal/src/pkg/rpc/dal";
+
+package dal;
+
+import "google/protobuf/empty.proto";
+import "time.proto";
+
+service UserService {
+  rpc Create(CreateUserRequest) returns (CreateUserReply) {}
+  rpc Get(GetUserRequest) returns (GetUserReply) {}
+  rpc Update(UpdateUserRequest) returns (User) {}
+  rpc Delete(DeleteUserRequest) returns (google.protobuf.Empty) {}
+}
+
+message User {
+  uint32 id = 1;
+  mixin.Time time = 2;
+  string account = 3;
+  string password = 4;
+}
+
+message CreateUserRequest {
+  repeated User users = 1;
+}
+
+message CreateUserReply {
+  repeated User users = 1;
+}
+
+message GetUserRequest {
+  User user = 1;
+  View view = 2;
+
+  enum View {
+    ByID = 0;
+    WithClientID = 1;
+  }
+}
+
+message GetUserReply {
+  repeated User users = 1;
+}
+
+message UpdateUserRequest {
+  User user = 1;
+}
+
+message DeleteUserRequest {
+  int32 id = 1;
+}

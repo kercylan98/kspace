@@ -17,5 +17,3 @@ Project created at `2022/02/06`
 包含了一些用于项目开发的应用程序
 - [`RSA`密钥构建程序：](https://github.com/kercylan98/kspace/tree/master/src/cmd/generate-rsa)
   >  生成项目所使用的`RSA`证书。
-- [`Protobuf`文件构建程序：](https://github.com/kercylan98/kspace/tree/master/src/cmd/generate-rsa)
-  > 扫描项目中所有的`proto`文件并进行`pb`和`grpc`文件生成。

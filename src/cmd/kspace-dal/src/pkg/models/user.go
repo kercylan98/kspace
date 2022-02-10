@@ -1,7 +1,5 @@
 package models
 
-import "github.com/kercylan98/kspace/src/pkg/model"
-
 // User 用户模型
 type User struct {
 	model.Core

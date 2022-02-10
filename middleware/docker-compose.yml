@@ -35,13 +35,40 @@ services:
     command:
       /bin/bash -c "redis-server /usr/local/etc/redis/redis.conf"
 
+  mongo:
+    image: mongo:latest
+    container_name: kspace-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - ./mongodb/db:/data/db # 挂载数据目录
+      - ./mongodb/log:/var/log/mongodb  # 挂载日志目录
+      - ./mongodb/config:/etc/mongo  # 挂载配置目录
+
+  etcd:
+    image: rancher/coreos-etcd:v3.4.13-arm64
+    container_name: kspace-etcd
+    restart: always
+    user: root
+    volumes:
+      - ./etcd/data:/etcd-data
+    environment:
+      ETCD_UNSUPPORTED_ARCH: "arm64"
+      ETCD_ENABLE_V2: "true"
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      ETCD_ADVERTISE_CLIENT_URLS: "http://0.0.0.0:2379"
+      ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
+    ports:
+      - "2379:2379"
+
   # MinIO 对象存储
   minio:
     image: docker.io/bitnami/minio:latest
     container_name: kspace-minio
     ports:
-      - '9000:9000'
-      - '9001:9001'
+      - '19000:9000'
+      - '19001:9001'
     volumes:
       - './minio/data:/data'
 
@@ -54,3 +81,69 @@ services:
       - ./zookeeper/config:/conf
     ports:
       - "2181:2181"
+
+  apisix-dashboard:
+    image: apache/apisix-dashboard:latest
+    container_name: kspace-apisix-dashboard
+    restart: always
+    volumes:
+      - ./apisix/dashboard_config.yaml:/usr/local/apisix-dashboard/conf/conf.yaml
+    ports:
+      - "9000:9000"
+
+  apisix:
+    image: apache/apisix:2.12.0-alpine
+    container_name: kspace-apisix
+    restart: always
+    volumes:
+      - ./apisix/logs:/usr/local/apisix/logs
+      - ./apisix/apisix_config.yaml:/usr/local/apisix/conf/config.yaml:ro
+    depends_on:
+      - etcd
+    ports:
+      - "9080:9080"
+      - "9091:9091"
+      - "9443:9443"
+      - "9092:9092"
+
+  nginx-apisix-a:
+    image: nginx:latest
+    container_name: kspace-apisix-nginx-a
+    restart: always
+    volumes:
+      - ./nginx/conf/apisix-nginx-a.conf:/etc/nginx/nginx.conf
+    ports:
+      - "9081:80/tcp"
+    environment:
+      - NGINX_PORT=80
+
+  nginx-apisix-b:
+    image: nginx:latest
+    container_name: kspace-apisix-nginx-b
+    restart: always
+    volumes:
+      - ./nginx/conf/apisix-nginx-b.conf:/etc/nginx/nginx.conf
+    ports:
+      - "9082:80/tcp"
+    environment:
+      - NGINX_PORT=80
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: kspace-prometheus
+    restart: always
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: kspace-grafana
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./grafana/provisioning:/etc/grafana/provisioning"
+      - "./grafana/dashboards:/var/lib/grafana/dashboards"
+      - "./grafana/config/grafana.ini:/etc/grafana/grafana.ini"

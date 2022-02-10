@@ -6,13 +6,12 @@ import (
 	"github.com/kercylan98/kspace/src/cmd/kspace-dal/src/pkg/models"
 	"github.com/kercylan98/kspace/src/cmd/kspace-dal/src/rpc"
 	"github.com/kercylan98/kspace/src/pkg/cryptography"
-	"github.com/kercylan98/kspace/src/pkg/krpc"
-	"github.com/kercylan98/kspace/src/pkg/model"
 	"github.com/kercylan98/kspace/src/pkg/orm"
+	"github.com/kercylan98/kspace/src/pkg/rpc"
 	"google.golang.org/grpc"
 )
 
-func UserServer() krpc.ServerDemandHandlerFunc {
+func UserServer() rpc.ServerDemandHandlerFunc {
 	return func(rpcServer grpc.ServiceRegistrar, mysql orm.MySQL, redis orm.Redis, rsa *cryptography.RSA) {
 		rpc.RegisterDalUserServer(rpcServer, User{
 			MySQL: mysql.InitDefault("root:root@tcp(127.0.0.1:3306)/kspace?charset=utf8mb4&parseTime=True&loc=Local",

@@ -31,6 +31,7 @@ func (slf NodeService) FindOne(name string) (Node, error) {
 	if nodes, err := slf.FindNodes(name); err != nil {
 		return Node{}, err
 	} else {
+		// TODO：简单的随机返回一个节点，应该实现负载均衡算法等。
 		var tempStore = map[int]Node{}
 		for i := 0; i < len(nodes); i++ {
 			tempStore[i] = nodes[i]
